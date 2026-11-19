@@ -1,0 +1,461 @@
+<!doctype html><html><head><meta charset=utf8><meta name=viewport content="width=device-width,initial-scale=1,viewport-fit=cover"><style>:root{color-scheme:light;box-sizing:border-box;padding-top:env(safe-area-inset-top,0px);padding-bottom:env(safe-area-inset-bottom,0px)}html{scroll-padding-top:env(safe-area-inset-top,0px)}body{margin:0;padding:0;font:14px -apple-system,BlinkMacSystemFont,sans-serif;background:#fff;color:#000}img{max-width:100%}[hidden]:not([hidden=until-found i]){display:none!important}</style></head><body>
+<title>퐁퐁 비눗방울</title>
+<meta name="claude:viewport-fit-sides" content="cover">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Jua&family=Gowun+Dodum&display=swap">
+<style>
+/* Layout: one-screen arcade — a slim stat bar over a full-bleed sky the bubbles rise through */
+:root {
+  --sky-top: #cfeef2;
+  --sky-bottom: #f4e6f7;
+  --ink: #23304a;
+  --ink-soft: #5c6a86;
+  --panel: rgba(255, 255, 255, 0.72);
+  --panel-line: rgba(35, 48, 74, 0.12);
+  --accent: #2f7d8c;
+  --accent-ink: #ffffff;
+  --gold: #c98a12;
+  --warn: #c8455b;
+  --rim-alpha: 0.85;
+  --font-display: "Jua", "Apple SD Gothic Neo", "Malgun Gothic", sans-serif;
+  --font-body: "Gowun Dodum", "Apple SD Gothic Neo", "Malgun Gothic", sans-serif;
+}
+@media (prefers-color-scheme: dark) {
+  :root:not([data-theme="light"]) {
+    --sky-top: #0f1a33; --sky-bottom: #2a1d3d; --ink: #eef1fb; --ink-soft: #a8b1cc;
+    --panel: rgba(20, 28, 52, 0.7); --panel-line: rgba(238, 241, 251, 0.14);
+    --accent: #6cc6d4; --accent-ink: #0f1a33; --gold: #f0c050; --warn: #ff7d92; --rim-alpha: 1;
+    color-scheme: dark;
+  }
+}
+:root[data-theme="dark"] {
+  --sky-top: #0f1a33; --sky-bottom: #2a1d3d; --ink: #eef1fb; --ink-soft: #a8b1cc;
+  --panel: rgba(20, 28, 52, 0.7); --panel-line: rgba(238, 241, 251, 0.14);
+  --accent: #6cc6d4; --accent-ink: #0f1a33; --gold: #f0c050; --warn: #ff7d92; --rim-alpha: 1;
+  color-scheme: dark;
+}
+html, body { height: 100%; }
+body {
+  background: linear-gradient(180deg, var(--sky-top), var(--sky-bottom));
+  background-color: var(--sky-top);
+  color: var(--ink);
+  font-family: var(--font-body);
+  overflow: hidden;
+  -webkit-user-select: none; user-select: none;
+  touch-action: manipulation;
+}
+.app { position: relative; height: 100%; display: flex; flex-direction: column; }
+.bar {
+  position: relative; z-index: 2;
+  display: flex; align-items: center; gap: 12px; flex-wrap: wrap;
+  padding-block: 12px;
+  padding-left: max(16px, env(safe-area-inset-left, 0px));
+  padding-right: max(16px, env(safe-area-inset-right, 0px));
+}
+.brand { font-family: var(--font-display); font-size: 22px; margin-right: auto; letter-spacing: 0.02em; }
+.stat {
+  display: flex; flex-direction: column; align-items: flex-end;
+  padding: 6px 12px; border-radius: 12px;
+  background: var(--panel); border: 1px solid var(--panel-line);
+  backdrop-filter: blur(6px); -webkit-backdrop-filter: blur(6px);
+  min-width: 64px;
+}
+.stat .k { font-size: 11px; color: var(--ink-soft); letter-spacing: 0.06em; }
+.stat .v { font-family: var(--font-display); font-size: 22px; line-height: 1.1; font-variant-numeric: tabular-nums; }
+.stat.score .v { font-size: 26px; }
+.stat.time.low .v { color: var(--warn); }
+.combo .v { color: var(--accent); }
+.icon-btn {
+  width: 40px; height: 40px; border-radius: 50%;
+  border: 1px solid var(--panel-line); background: var(--panel); color: var(--ink);
+  font: inherit; font-size: 16px; cursor: pointer;
+}
+.icon-btn:focus-visible, .btn:focus-visible { outline: 3px solid var(--accent); outline-offset: 2px; }
+#sky { flex: 1; display: block; width: 100%; min-height: 0; cursor: crosshair; }
+
+.overlay {
+  position: absolute; inset: 0; z-index: 3;
+  display: grid; place-items: center;
+  padding-left: max(16px, env(safe-area-inset-left, 0px));
+  padding-right: max(16px, env(safe-area-inset-right, 0px));
+  pointer-events: none;
+}
+.card {
+  pointer-events: auto;
+  width: min(380px, 100%);
+  padding: 28px 24px 24px; border-radius: 28px;
+  background: var(--panel); border: 1px solid var(--panel-line);
+  backdrop-filter: blur(10px); -webkit-backdrop-filter: blur(10px);
+  box-shadow: 0 20px 60px rgba(20, 30, 60, 0.18);
+  display: flex; flex-direction: column; gap: 14px; text-align: center;
+}
+.card h1 { margin: 0; font-family: var(--font-display); font-weight: 400; font-size: 40px; text-wrap: balance; }
+.card p { margin: 0; color: var(--ink-soft); line-height: 1.6; }
+.legend { display: grid; grid-template-columns: auto 1fr auto; gap: 8px 12px; align-items: center; text-align: left; font-size: 14px; }
+.legend .dot { width: 22px; height: 22px; border-radius: 50%; border: 2px solid; }
+.dot.plain { border-color: #7fc6e8; background: radial-gradient(circle at 35% 30%, #fff 0 18%, rgba(127,198,232,.25) 60%); }
+.dot.gold { border-color: #e0a92a; background: radial-gradient(circle at 35% 30%, #fff 0 18%, rgba(240,190,70,.45) 60%); }
+.dot.rainbow { border-color: transparent; background: conic-gradient(#ff7a9a, #ffc857, #7be08a, #6cc6ff, #b48cff, #ff7a9a); }
+.legend .pts { font-family: var(--font-display); font-variant-numeric: tabular-nums; color: var(--ink); }
+.results { display: grid; grid-template-columns: repeat(3, 1fr); gap: 8px; }
+.results div { display: flex; flex-direction: column; gap: 2px; }
+.results .k { font-size: 12px; color: var(--ink-soft); }
+.results .v { font-family: var(--font-display); font-size: 22px; font-variant-numeric: tabular-nums; }
+.final { font-family: var(--font-display); font-size: 56px; line-height: 1; font-variant-numeric: tabular-nums; }
+.newbest { color: var(--gold); font-family: var(--font-display); font-size: 18px; }
+.btn {
+  font-family: var(--font-display); font-size: 22px;
+  padding: 12px 20px; border-radius: 999px; border: 0; cursor: pointer;
+  background: var(--accent); color: var(--accent-ink);
+}
+.btn:active { transform: scale(0.97); }
+@media (max-width: 480px) {
+  .brand { width: 100%; font-size: 20px; }
+  .stat { flex: 1; min-width: 0; padding: 4px 8px; }
+  .stat .v { font-size: 18px; }
+  .stat.score .v { font-size: 20px; }
+  .card h1 { font-size: 34px; }
+}
+</style>
+
+<div class="app">
+  <header class="bar">
+    <div class="brand">퐁퐁 비눗방울</div>
+    <div class="stat score"><span class="k">점수</span><span class="v" id="score">0</span></div>
+    <div class="stat combo"><span class="k">콤보</span><span class="v" id="combo">×1</span></div>
+    <div class="stat time" id="timeBox"><span class="k">남은 시간</span><span class="v" id="time">60</span></div>
+    <div class="stat"><span class="k">최고</span><span class="v" id="best">0</span></div>
+    <button class="icon-btn" id="mute" type="button" aria-label="소리 끄기">♪</button>
+  </header>
+  <canvas id="sky" aria-label="비눗방울이 떠오르는 하늘. 방울을 눌러 터뜨리세요."></canvas>
+
+  <div class="overlay" id="startOverlay">
+    <div class="card">
+      <h1>퐁퐁 비눗방울</h1>
+      <p>60초 동안 떠오르는 비눗방울을 눌러 터뜨리세요. 작은 방울일수록 점수가 높고, 빠르게 연달아 터뜨리면 콤보 배수가 붙어요.</p>
+      <div class="legend">
+        <span class="dot plain"></span><span>보통 방울 (작을수록 높음)</span><span class="pts">10–60</span>
+        <span class="dot gold"></span><span>황금 방울</span><span class="pts">150</span>
+        <span class="dot rainbow"></span><span>무지개 방울: 주변 방울도 함께 터짐</span><span class="pts">50+</span>
+      </div>
+      <button class="btn" id="startBtn" type="button">시작하기</button>
+    </div>
+  </div>
+
+  <div class="overlay" id="endOverlay" hidden>
+    <div class="card">
+      <p>이번 판 점수</p>
+      <div class="final" id="finalScore">0</div>
+      <div class="newbest" id="newBest" hidden>최고 기록 경신!</div>
+      <div class="results">
+        <div><span class="k">터뜨린 방울</span><span class="v" id="rPops">0</span></div>
+        <div><span class="k">최대 콤보</span><span class="v" id="rCombo">0</span></div>
+        <div><span class="k">최고 기록</span><span class="v" id="rBest">0</span></div>
+      </div>
+      <button class="btn" id="againBtn" type="button">다시 하기</button>
+    </div>
+  </div>
+</div>
+
+<script>
+(() => {
+  const ROUND = 60;
+  const COMBO_WINDOW = 0.9; // seconds between pops to keep a combo
+
+  const canvas = document.getElementById('sky');
+  const ctx = canvas.getContext('2d');
+  const $ = id => document.getElementById(id);
+  const el = {
+    score: $('score'), combo: $('combo'), time: $('time'), timeBox: $('timeBox'), best: $('best'),
+    start: $('startOverlay'), end: $('endOverlay'), final: $('finalScore'), newBest: $('newBest'),
+    rPops: $('rPops'), rCombo: $('rCombo'), rBest: $('rBest'), mute: $('mute')
+  };
+
+  let W = 0, H = 0, dpr = 1;
+  function resize() {
+    dpr = Math.min(window.devicePixelRatio || 1, 2);
+    const r = canvas.getBoundingClientRect();
+    W = r.width; H = r.height;
+    canvas.width = Math.round(W * dpr); canvas.height = Math.round(H * dpr);
+    ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
+  }
+  window.addEventListener('resize', resize);
+
+  // Theme tokens for canvas text
+  let ink = '#23304a', gold = '#c98a12', accent = '#2f7d8c', rimAlpha = 0.85;
+  function readTokens() {
+    const cs = getComputedStyle(document.documentElement);
+    ink = cs.getPropertyValue('--ink').trim() || ink;
+    gold = cs.getPropertyValue('--gold').trim() || gold;
+    accent = cs.getPropertyValue('--accent').trim() || accent;
+    rimAlpha = parseFloat(cs.getPropertyValue('--rim-alpha')) || rimAlpha;
+  }
+  readTokens();
+  try { matchMedia('(prefers-color-scheme: dark)').addEventListener('change', readTokens); } catch (e) {}
+  new MutationObserver(readTokens).observe(document.documentElement, { attributes: true, attributeFilter: ['data-theme'] });
+
+  // Best score (per-viewer convenience)
+  let best = 0;
+  try { best = parseInt(localStorage.getItem('bubble-best') || '0', 10) || 0; } catch (e) {}
+  el.best.textContent = best.toLocaleString();
+
+  // Sound
+  let audio = null, muted = false;
+  function pop(pitch = 1, kind = 'plain') {
+    if (muted) return;
+    try {
+      audio = audio || new (window.AudioContext || window.webkitAudioContext)();
+      const t = audio.currentTime;
+      const o = audio.createOscillator(), g = audio.createGain();
+      o.type = kind === 'gold' ? 'triangle' : 'sine';
+      const f = (kind === 'gold' ? 900 : 520) * pitch;
+      o.frequency.setValueAtTime(f, t);
+      o.frequency.exponentialRampToValueAtTime(f * 2.4, t + 0.06);
+      g.gain.setValueAtTime(0.0001, t);
+      g.gain.exponentialRampToValueAtTime(0.25, t + 0.005);
+      g.gain.exponentialRampToValueAtTime(0.0001, t + (kind === 'gold' ? 0.25 : 0.1));
+      o.connect(g).connect(audio.destination);
+      o.start(t); o.stop(t + 0.3);
+    } catch (e) {}
+  }
+  el.mute.addEventListener('click', () => {
+    muted = !muted;
+    el.mute.textContent = muted ? '×' : '♪';
+    el.mute.setAttribute('aria-label', muted ? '소리 켜기' : '소리 끄기');
+  });
+
+  // State
+  let bubbles = [], parts = [], texts = [];
+  let playing = false, timeLeft = ROUND, score = 0, combo = 0, maxCombo = 0, pops = 0, lastPopAt = -99, clock = 0;
+
+  function rand(a, b) { return a + Math.random() * (b - a); }
+
+  function spawn(atRandomHeight = false) {
+    const roll = Math.random();
+    const kind = roll < 0.05 ? 'gold' : roll < 0.09 ? 'rainbow' : 'plain';
+    const r = kind === 'gold' ? rand(18, 26) : kind === 'rainbow' ? rand(30, 40) : rand(18, 60);
+    const speedBoost = playing ? 1 + (ROUND - timeLeft) / ROUND * 0.8 : 0.6;
+    bubbles.push({
+      x: rand(r, Math.max(r + 1, W - r)),
+      y: atRandomHeight ? rand(r, H) : H + r + rand(0, 40),
+      r, kind,
+      hue: rand(170, 320),
+      vy: -(rand(28, 55) + (60 - r) * 1.3) * speedBoost,
+      drift: rand(0.6, 1.6), phase: rand(0, Math.PI * 2),
+      born: clock
+    });
+  }
+
+  function pointsFor(b) {
+    if (b.kind === 'gold') return 150;
+    if (b.kind === 'rainbow') return 50;
+    return Math.max(10, Math.round((80 - b.r) / 10) * 10);
+  }
+  function multiplier() { return Math.min(3, 1 + Math.floor(combo / 5) * 0.5); }
+
+  function burst(b) {
+    const n = Math.round(10 + b.r / 4);
+    for (let i = 0; i < n; i++) {
+      const a = (i / n) * Math.PI * 2 + rand(-0.2, 0.2);
+      const s = rand(60, 160) * (b.r / 40);
+      parts.push({ x: b.x + Math.cos(a) * b.r, y: b.y + Math.sin(a) * b.r, vx: Math.cos(a) * s, vy: Math.sin(a) * s,
+        life: rand(0.35, 0.6), max: 0.6, size: rand(1.5, 3.5), hue: b.kind === 'gold' ? 45 : b.kind === 'rainbow' ? rand(0, 360) : b.hue });
+    }
+  }
+
+  function popBubble(b, chain = false) {
+    const idx = bubbles.indexOf(b);
+    if (idx < 0) return;
+    bubbles.splice(idx, 1);
+    burst(b);
+    if (!playing) { pop(1.2 - b.r / 120, b.kind); return; }
+
+    if (!chain) {
+      combo = clock - lastPopAt <= COMBO_WINDOW ? combo + 1 : 1;
+      lastPopAt = clock;
+      maxCombo = Math.max(maxCombo, combo);
+    }
+    const gained = Math.round(pointsFor(b) * multiplier());
+    score += gained; pops++;
+    texts.push({ x: b.x, y: b.y, t: '+' + gained, life: 0.9, color: b.kind === 'gold' ? gold : ink, big: b.kind !== 'plain' });
+    pop(1.2 - b.r / 120 + Math.min(combo, 20) * 0.03, b.kind);
+
+    if (b.kind === 'rainbow') {
+      const reach = 170;
+      const near = bubbles.filter(o => Math.hypot(o.x - b.x, o.y - b.y) < reach + o.r);
+      near.forEach((o, i) => setTimeout(() => popBubble(o, true), 40 + i * 45));
+      parts.push({ ring: true, x: b.x, y: b.y, r: b.r, life: 0.45, max: 0.45, reach });
+    }
+    updateHud();
+  }
+
+  function updateHud() {
+    el.score.textContent = score.toLocaleString();
+    el.combo.textContent = '×' + multiplier().toFixed(multiplier() % 1 ? 1 : 0);
+    el.time.textContent = Math.ceil(timeLeft);
+    el.timeBox.classList.toggle('low', playing && timeLeft <= 10);
+  }
+
+  canvas.addEventListener('pointerdown', e => {
+    const r = canvas.getBoundingClientRect();
+    const x = e.clientX - r.left, y = e.clientY - r.top;
+    for (let i = bubbles.length - 1; i >= 0; i--) {
+      const b = bubbles[i];
+      const pad = e.pointerType === 'touch' ? 10 : 2;
+      if (Math.hypot(b.x - x, b.y - y) <= b.r + pad) { popBubble(b); return; }
+    }
+  });
+
+  function startGame() {
+    bubbles = []; parts = []; texts = [];
+    score = 0; combo = 0; maxCombo = 0; pops = 0; lastPopAt = -99; timeLeft = ROUND;
+    playing = true;
+    el.start.hidden = true; el.end.hidden = true;
+    for (let i = 0; i < 8; i++) spawn(true);
+    updateHud();
+    try { audio = audio || new (window.AudioContext || window.webkitAudioContext)(); audio.resume && audio.resume(); } catch (e) {}
+  }
+  function endGame() {
+    playing = false; combo = 0;
+    const isBest = score > best;
+    if (isBest) { best = score; try { localStorage.setItem('bubble-best', String(best)); } catch (e) {} }
+    el.best.textContent = best.toLocaleString();
+    el.final.textContent = score.toLocaleString();
+    el.rPops.textContent = pops;
+    el.rCombo.textContent = maxCombo;
+    el.rBest.textContent = best.toLocaleString();
+    el.newBest.hidden = !isBest || score === 0;
+    el.end.hidden = false;
+    updateHud();
+    el.timeBox.classList.remove('low');
+    $('againBtn').focus();
+  }
+  $('startBtn').addEventListener('click', startGame);
+  $('againBtn').addEventListener('click', startGame);
+
+  // Drawing
+  function drawBubble(b) {
+    const wob = Math.sin(clock * 3 + b.phase) * 0.04;
+    const rx = b.r * (1 + wob), ry = b.r * (1 - wob);
+    ctx.save();
+    ctx.translate(b.x, b.y);
+    ctx.scale(rx / b.r, ry / b.r);
+
+    let tint, rim;
+    if (b.kind === 'gold') {
+      tint = 'rgba(245, 195, 70, 0.42)';
+      rim = ctx.createLinearGradient(-b.r, -b.r, b.r, b.r);
+      rim.addColorStop(0, `rgba(255, 230, 140, ${rimAlpha})`);
+      rim.addColorStop(1, `rgba(214, 150, 20, ${rimAlpha})`);
+    } else if (b.kind === 'rainbow') {
+      tint = 'rgba(255, 255, 255, 0.18)';
+      if (ctx.createConicGradient) {
+        rim = ctx.createConicGradient(clock * 2, 0, 0);
+        ['#ff7a9a', '#ffc857', '#7be08a', '#6cc6ff', '#b48cff', '#ff7a9a'].forEach((c, i) => rim.addColorStop(i / 5, c));
+      } else rim = '#b48cff';
+    } else {
+      const h = b.hue + Math.sin(clock + b.phase) * 25;
+      tint = `hsla(${h}, 80%, 70%, 0.16)`;
+      rim = ctx.createLinearGradient(-b.r, -b.r, b.r, b.r);
+      rim.addColorStop(0, `hsla(${h}, 85%, 65%, ${rimAlpha})`);
+      rim.addColorStop(0.5, `hsla(${h + 60}, 85%, 70%, ${rimAlpha * 0.7})`);
+      rim.addColorStop(1, `hsla(${h + 120}, 85%, 65%, ${rimAlpha})`);
+    }
+    const body = ctx.createRadialGradient(0, 0, b.r * 0.2, 0, 0, b.r);
+    body.addColorStop(0, 'rgba(255,255,255,0.02)');
+    body.addColorStop(0.75, tint);
+    body.addColorStop(1, 'rgba(255,255,255,0.35)');
+    ctx.beginPath(); ctx.arc(0, 0, b.r, 0, Math.PI * 2);
+    ctx.fillStyle = body; ctx.fill();
+    ctx.lineWidth = b.kind === 'rainbow' ? 3.5 : 2;
+    ctx.strokeStyle = rim; ctx.stroke();
+
+    // highlights
+    ctx.beginPath();
+    ctx.ellipse(-b.r * 0.38, -b.r * 0.42, b.r * 0.22, b.r * 0.12, -0.7, 0, Math.PI * 2);
+    ctx.fillStyle = 'rgba(255,255,255,0.85)'; ctx.fill();
+    ctx.beginPath();
+    ctx.arc(b.r * 0.45, b.r * 0.4, b.r * 0.07, 0, Math.PI * 2);
+    ctx.fillStyle = 'rgba(255,255,255,0.55)'; ctx.fill();
+
+    if (b.kind === 'gold') {
+      ctx.font = `${Math.round(b.r * 0.9)}px Jua, sans-serif`;
+      ctx.textAlign = 'center'; ctx.textBaseline = 'middle';
+      ctx.fillStyle = 'rgba(190, 120, 10, 0.9)';
+      ctx.fillText('★', 0, 1);
+    }
+    ctx.restore();
+  }
+
+  let last = performance.now(), spawnAcc = 0;
+  function frame(now) {
+    const dt = Math.min(0.05, (now - last) / 1000);
+    last = now; clock += dt;
+
+    if (playing) {
+      timeLeft -= dt;
+      if (clock - lastPopAt > COMBO_WINDOW && combo) { combo = 0; updateHud(); }
+      if (timeLeft <= 0) { timeLeft = 0; endGame(); }
+      else if (Math.ceil(timeLeft) !== Math.ceil(timeLeft + dt)) updateHud();
+    }
+
+    // spawn rate scales with area and game progress
+    const areaFactor = Math.max(0.5, (W * H) / (900 * 600));
+    const rate = playing ? (1.6 + (ROUND - timeLeft) / ROUND * 2.2) * areaFactor : 0.9 * areaFactor;
+    spawnAcc += dt * rate;
+    while (spawnAcc >= 1) { spawnAcc -= 1; if (bubbles.length < 60) spawn(); }
+
+    for (const b of bubbles) {
+      b.y += b.vy * dt;
+      b.x += Math.sin(clock * b.drift + b.phase) * 22 * dt;
+    }
+    bubbles = bubbles.filter(b => b.y > -b.r - 10);
+
+    ctx.clearRect(0, 0, W, H);
+    for (const b of bubbles) drawBubble(b);
+
+    for (const p of parts) {
+      p.life -= dt;
+      const a = Math.max(0, p.life / p.max);
+      if (p.ring) {
+        const rr = p.r + (p.reach - p.r) * (1 - a);
+        ctx.beginPath(); ctx.arc(p.x, p.y, rr, 0, Math.PI * 2);
+        ctx.strokeStyle = `rgba(180, 140, 255, ${a * 0.6})`; ctx.lineWidth = 3; ctx.stroke();
+        continue;
+      }
+      p.x += p.vx * dt; p.y += p.vy * dt; p.vy += 220 * dt; p.vx *= 0.96;
+      ctx.beginPath(); ctx.arc(p.x, p.y, p.size * a + 0.5, 0, Math.PI * 2);
+      ctx.fillStyle = `hsla(${p.hue}, 85%, 70%, ${a})`; ctx.fill();
+    }
+    parts = parts.filter(p => p.life > 0);
+
+    ctx.textAlign = 'center'; ctx.textBaseline = 'middle';
+    for (const t of texts) {
+      t.life -= dt; t.y -= 40 * dt;
+      ctx.globalAlpha = Math.max(0, Math.min(1, t.life / 0.5));
+      ctx.font = `${t.big ? 28 : 20}px Jua, "Malgun Gothic", sans-serif`;
+      ctx.fillStyle = t.color;
+      ctx.fillText(t.t, t.x, t.y);
+    }
+    ctx.globalAlpha = 1;
+    texts = texts.filter(t => t.life > 0);
+
+    // combo badge near top of sky
+    if (playing && combo >= 3) {
+      ctx.font = '22px Jua, "Malgun Gothic", sans-serif';
+      ctx.fillStyle = accent;
+      ctx.fillText(`${combo} 콤보!`, W / 2, 28);
+    }
+
+    requestAnimationFrame(frame);
+  }
+
+  resize();
+  for (let i = 0; i < 12; i++) spawn(true);
+  updateHud();
+  requestAnimationFrame(frame);
+})();
+</script>
+
+</body></html>
